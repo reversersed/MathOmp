@@ -6,57 +6,44 @@
 
 void ExplicitEuler(double* y, int size, double (*function[])(double*, double), double t0, double t_max, double tau)
 {
-	double* temporary_y = new double[size];
-
 	double t = t0 - tau;
 	while ((t = t + tau) <= t_max)
 	{
 		for (int i = 0; i < size; i++)
-			temporary_y[i] = y[i] + tau * function[i](y, t);
-		for (int i = 0; i < size; i++)
-			y[i] = temporary_y[i];
+			y[i] += tau * function[i](y, t);
 	}
 }
 void RungeKutt2(double* y, int size, double (*function[])(double*, double), double t0, double t_max, double tau)
 {
 	double* temporary_y = new double[size];
-	double* temporary_f = new double[size];
 
 	for (double x = t0; x <= t_max; x += tau)
 	{
 		for (int i = 0; i < size; i++)
 			temporary_y[i] = y[i] + tau * 0.5 * function[i](y, x);
 		for (int i = 0; i < size; i++)
-			temporary_f[i] = y[i] + tau * function[i](temporary_y, x + tau * 0.5);
-		for (int i = 0; i < size; i++)
-			y[i] = temporary_f[i];
+			y[i] += tau * function[i](temporary_y, x + tau * 0.5);
 	}
 
 	delete[] temporary_y;
-	delete[] temporary_f;
 }
 void PredictorCorrector(double* y, int size, double (*function[])(double*, double), double t0, double t_max, double tau)
 {
 	double* temporary_y = new double[size];
-	double* temporary_f = new double[size];
 
 	for (double x = t0; x <= t_max; x += tau)
 	{
 		for (int i = 0; i < size; i++)
 			temporary_y[i] = y[i] + tau * function[i](y, x);
 		for (int i = 0; i < size; i++)
-			temporary_f[i] = y[i] + tau * (function[i](y, x) + function[i](temporary_y, x + tau)) / 2;
-		for (int i = 0; i < size; i++)
-			y[i] = temporary_f[i];
+			y[i] += tau * (function[i](y, x) + function[i](temporary_y, x + tau)) / 2.0;
 	}
 
 	delete[] temporary_y;
-	delete[] temporary_f;
 }
 void RungeKutt4(double* y, int size, double (*function[])(double*, double), double t0, double t_max, double tau)
 {
 	double 
-		*temporary_y = new double[size],
 		*temporary_r1 = new double[size],
 		*temporary_r2 = new double[size],
 		*temporary_r3 = new double[size],
@@ -80,12 +67,9 @@ void RungeKutt4(double* y, int size, double (*function[])(double*, double), doub
 		for (int i = 0; i < size; i++)
 			temporary_r4[i] = tau * function[i](buffer, x + tau);
 		for (int i = 0; i < size; i++)
-			temporary_y[i] = y[i] + (temporary_r1[i] + temporary_r2[i] * 2 + temporary_r3[i] * 2 + temporary_r4[i]) / 6;
-		for (int i = 0; i < size; i++)
-			y[i] = temporary_y[i];
+			y[i] += (temporary_r1[i] + temporary_r2[i] * 2.0 + temporary_r3[i] * 2.0 + temporary_r4[i]) / 6.0;
 	}
 
-	delete[] temporary_y;
 	delete[] temporary_r1;
 	delete[] temporary_r2;
 	delete[] temporary_r3;
@@ -94,12 +78,15 @@ void RungeKutt4(double* y, int size, double (*function[])(double*, double), doub
 }
 void ImplicitEuler(double* y, int size, double (*function[])(double*, double), double t0, double t_max, double tau)
 {
-	double *temporary_y = new double[size], *temporary_f = new double[size];
+	double *temporary_f = new double[size];
 	double a[2][2] = { {-1.0 / tau,1},{0,-1.0 / tau} };
 	double d[3];
 
 	for (double x = t0; x <= t_max; x += tau)
 	{
+		a[1][0] = -x*x;
+		a[1][1] = -0.19*x;
+
 		for (int i = 0; i < size; i++)
 			temporary_f[i] = -function[i](y, x);
 
@@ -108,11 +95,8 @@ void ImplicitEuler(double* y, int size, double (*function[])(double*, double), d
 		d[2] = a[0][0] * temporary_f[1] - temporary_f[0] * a[1][0];
 
 		for (int i = 0; i < size; i++)
-			temporary_y[i] = d[i + 1] / d[0];
-		for (int i = 0; i < size; i++)
-			y[i] = y[i] + temporary_y[i];
+			y[i] += d[i + 1] / d[0];
 	}
-	delete[] temporary_y;
 	delete[] temporary_f;
 }
 
